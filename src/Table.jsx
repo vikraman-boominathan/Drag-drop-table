@@ -69,18 +69,7 @@ export default function Table() {
       
     );
 
-    // const monitor = monitorForElements({
-    //   canMonitor: ({ source }) => true,
-    //   onDrop: ({ location, source }) => {
-    //     const startIndex = source.data.index;
-    //     const destinationIndex = location.current.dropTargets[0];
-    //     console.log(startIndex, destinationIndex);
-    //   },
-    // });
-
-    // return () => {
-    //   monitor();
-    // };
+   
   }, [items]);
 
   return (

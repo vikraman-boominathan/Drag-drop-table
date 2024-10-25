@@ -20,87 +20,89 @@ export default function Table() {
   ]);
 
   const [columns, setColumns] = useState(["name", "status", "assignee"]);
+  const [draggedRow, setDraggedRow] = useState(null);
+  const [targetRow, setTargetRow] = useState(null);
+  const [draggedColumn, setDraggedColumn] = useState(null);
+  const [targetColumn, setTargetColumn] = useState(null);
 
-  const ref = useRef([]);
-
+  const rowRef = useRef([]);
   const colRef = useRef([]);
 
   useEffect(() => {
-    console.log("row render")
-    ref.current.forEach((rowRef, index) => {
-      if (rowRef) {
-        return combine(
+    rowRef.current.forEach((rowEl, index) => {
+      if (rowEl) {
+        combine(
           draggable({
-            element: rowRef,
+            element: rowEl,
             getInitialData() {
-              return {
-                index,
-                id: items[index].id,
-              };
+              setDraggedRow(index);
+              return { index, id: items[index].id };
             },
           }),
           dropTargetForElements({
-            element: rowRef,
+            element: rowEl,
             getData() {
-              return {
-                index,
-              };
+              return { index };
+            },
+            onDragEnter() {
+              if (index !== draggedRow) setTargetRow(index);
+            },
+            onDragLeave() {
+              setTargetRow(null);
             },
             onDrop({ source, self }) {
               if (source.data.index !== self.data.index) {
                 const newItems = [...items];
-                const dropped = newItems[source.data.index];
-                newItems.splice(source.data.index, 1);
+                const [dropped] = newItems.splice(source.data.index, 1);
                 newItems.splice(self.data.index, 0, dropped);
-
                 setItems(newItems);
               }
+              setDraggedRow(null);
+              setTargetRow(null);
             },
           })
         );
       }
     });
-  }, [items]);
+  }, [items, draggedRow]);
 
   useEffect(() => {
-    console.log("col render")
-    colRef.current.forEach((colRef, index) => {
-      if (colRef) {
-        return combine(
+    colRef.current.forEach((colEl, index) => {
+      if (colEl) {
+        combine(
           draggable({
-            element: colRef,
+            element: colEl,
             getInitialData() {
-              return {
-                index,
-              };
+              setDraggedColumn(index);
+              return { index };
             },
           }),
           dropTargetForElements({
-            element: colRef,
+            element: colEl,
             getData() {
-              return {
-                index,
-              };
+              return { index };
+            },
+            onDragEnter() {
+              if (index !== draggedColumn) setTargetColumn(index);
+            },
+            onDragLeave() {
+              setTargetColumn(null);
             },
             onDrop({ source, self }) {
-              const idSource = source;
-
-              const idSelf = self;
-
               if (source.data.index !== self.data.index) {
                 const newColumns = [...columns];
-                const dropped = newColumns[source.data.index];
-                newColumns.splice(source.data.index, 1);
+                const [dropped] = newColumns.splice(source.data.index, 1);
                 newColumns.splice(self.data.index, 0, dropped);
-
                 setColumns(newColumns);
               }
+              setDraggedColumn(null);
+              setTargetColumn(null);
             },
           })
         );
       }
     });
-  }, [columns]);
+  }, [columns, draggedColumn]);
 
   return (
     <div className="h-64 overflow-y-auto">
@@ -110,9 +112,13 @@ export default function Table() {
             {columns.map((col, index) => (
               <th
                 key={index}
-                className="p-2 border"
-                data-index={index}
-                data-type="column"
+                className={`p-2 border ${
+                  draggedColumn === index
+                    ? "bg-blue-300" 
+                    : targetColumn === index
+                    ? "opacity-50"  
+                    : ""
+                }`}
                 ref={(el) => (colRef.current[index] = el)}
               >
                 {col.toUpperCase()}
@@ -124,10 +130,14 @@ export default function Table() {
           {items.map((item, rowIndex) => (
             <tr
               key={item.id}
-              className="border"
-              data-index={rowIndex}
-              data-type="row"
-              ref={(el) => (ref.current[rowIndex] = el)}
+              className={`border ${
+                draggedRow === rowIndex
+                  ? "bg-yellow-300"
+                  : targetRow === rowIndex
+                  ? "opacity-50 bg-red-300"
+                  : ""
+              }`}
+              ref={(el) => (rowRef.current[rowIndex] = el)}
             >
               {columns.map((col) => (
                 <td key={col} className="p-2">

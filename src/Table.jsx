@@ -20,57 +20,87 @@ export default function Table() {
   ]);
 
   const [columns, setColumns] = useState(["name", "status", "assignee"]);
-  const [rowIndex, setRowIndex] = useState(null);
 
   const ref = useRef([]);
 
+  const colRef = useRef([]);
+
   useEffect(() => {
-    ref.current = ref.current.slice(0, items.length);
+    console.log("row render")
+    ref.current.forEach((rowRef, index) => {
+      if (rowRef) {
+        return combine(
+          draggable({
+            element: rowRef,
+            getInitialData() {
+              return {
+                index,
+                id: items[index].id,
+              };
+            },
+          }),
+          dropTargetForElements({
+            element: rowRef,
+            getData() {
+              return {
+                index,
+              };
+            },
+            onDrop({ source, self }) {
+              if (source.data.index !== self.data.index) {
+                const newItems = [...items];
+                const dropped = newItems[source.data.index];
+                newItems.splice(source.data.index, 1);
+                newItems.splice(self.data.index, 0, dropped);
 
-    ref.current.forEach(
-      (rowRef, index) => {
-        if (rowRef) {
-          return combine(
-            draggable({
-              element: rowRef,
-              getInitialData() {
-                return {
-                  index,
-                  id: items[index].id,
-                };
-              },
-              onDragStart: () => {
-                setRowIndex(index);
-              },
-              onDrop: () => {
-                setRowIndex(null);
-              },
-            }),
-            dropTargetForElements({
-              element: rowRef,
-              getData() {
-                return {
-                  index
-                };
-              },
-              onDrop({ source, self }) {
-                if (source.data.index !== self.data.index) {
-                  const newItems = [...items]
-                  const dropped = newItems[source.data.index]
-                  newItems.splice(source.data.index,1)
-                  newItems.splice(self.data.index, 0, dropped)
-                  setItems(newItems)
-                }
-              },
-            })
-          );
-        }
-      },
-      
-    );
-
-   
+                setItems(newItems);
+              }
+            },
+          })
+        );
+      }
+    });
   }, [items]);
+
+  useEffect(() => {
+    console.log("col render")
+    colRef.current.forEach((colRef, index) => {
+      if (colRef) {
+        return combine(
+          draggable({
+            element: colRef,
+            getInitialData() {
+              return {
+                index,
+              };
+            },
+          }),
+          dropTargetForElements({
+            element: colRef,
+            getData() {
+              return {
+                index,
+              };
+            },
+            onDrop({ source, self }) {
+              const idSource = source;
+
+              const idSelf = self;
+
+              if (source.data.index !== self.data.index) {
+                const newColumns = [...columns];
+                const dropped = newColumns[source.data.index];
+                newColumns.splice(source.data.index, 1);
+                newColumns.splice(self.data.index, 0, dropped);
+
+                setColumns(newColumns);
+              }
+            },
+          })
+        );
+      }
+    });
+  }, [columns]);
 
   return (
     <div className="h-64 overflow-y-auto">
@@ -83,6 +113,7 @@ export default function Table() {
                 className="p-2 border"
                 data-index={index}
                 data-type="column"
+                ref={(el) => (colRef.current[index] = el)}
               >
                 {col.toUpperCase()}
               </th>
@@ -98,7 +129,7 @@ export default function Table() {
               data-type="row"
               ref={(el) => (ref.current[rowIndex] = el)}
             >
-              {columns.map((col, colIndex) => (
+              {columns.map((col) => (
                 <td key={col} className="p-2">
                   {item[col]}
                 </td>
